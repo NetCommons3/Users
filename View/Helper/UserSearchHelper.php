@@ -183,8 +183,8 @@ class UserSearchHelper extends AppHelper {
 		$result = array(
 			'id' => Hash::get($user, $model . '.id'),
 			'handlename' => Hash::get($user, $model . '.handlename'),
-			'avatar' => $this->DisplayUser->avatar($user, array(), false),
-			'link' => NetCommonsUrl::userActionUrl(array('key' => Hash::get($user, $model . '.id'))),
+			'avatar' => $this->DisplayUser->avatar($user, array(), $model.'.id', false),
+			'link' => NetCommonsUrl::userActionUrl(array('key' => Hash::get($user, $model))),
 		);
 
 		return $result;
