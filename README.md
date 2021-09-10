@@ -1,9 +1,6 @@
 Users
 =====
 
-[![Build Status](https://travis-ci.org/NetCommons3/Users.png?branch=master)](https://travis-ci.org/NetCommons3/Users)
-[![Coverage Status](https://coveralls.io/repos/NetCommons3/Users/badge.png?branch=master)](https://coveralls.io/r/NetCommons3/Users?branch=master)
-
-| dependencies | status |
-| ------------ | ------ |
-| composer.json | [![Dependency Status](https://www.versioneye.com/user/projects/5428e45d820067cf31000082/badge.svg?style=flat)](https://www.versioneye.com/user/projects/5428e45d820067cf31000082) |
+[![Tests Status](https://github.com/NetCommons3/Users/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/NetCommons3/Users/actions/workflows/tests.yml)
+[![Coverage Status](https://coveralls.io/repos/NetCommons3/Users/badge.svg?branch=master)](https://coveralls.io/r/NetCommons3/Users?branch=master)
+[![Stable Version](https://img.shields.io/packagist/v/netcommons/users.svg?label=stable)](https://packagist.org/packages/netcommons/users)
