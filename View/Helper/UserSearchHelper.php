@@ -220,7 +220,7 @@ class UserSearchHelper extends AppHelper {
 			//ルーム権限
 			$value = $this->Rooms->roomRoleName($user[$modelName]['role_key']);
 		} elseif (isset($userAttribute['UserAttributeChoice']) &&
-				Hash::get($user, $modelName . '.' . $fieldName)) {
+				isset($user[$modelName][$fieldName])) {
 			//選択肢
 			if ($fieldName === 'role_key') {
 				$values = Hash::extract(
