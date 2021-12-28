@@ -58,16 +58,16 @@ jobs:
 
       - name: docker-compose install
         run: |
-          curl -L https://github.com/docker/compose/releases/download/1.11.2/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
-          chmod +x ~/docker-compose
-          sudo mv ~/docker-compose /usr/local/bin/docker-compose
+          #curl -L https://github.com/docker/compose/releases/download/1.11.2/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+          #chmod +x ~/docker-compose
+          #sudo mv ~/docker-compose /usr/local/bin/docker-compose
           docker-compose --version
 
       - name: git clone nc3
         run: git clone -b ${NC3_GIT_BRANCH} ${NC3_GIT_URL} ${NC3_BUILD_DIR}
 
       - name: git clone nc3_docker
-        run: git clone https://github.com/NetCommons3/nc3app-docker.git ${NC3_DOCKER_DIR}
+        run: git clone git://github.com/NetCommons3/nc3app-docker.git ${NC3_DOCKER_DIR}
 
       - name: docker-compose start
         run: |
