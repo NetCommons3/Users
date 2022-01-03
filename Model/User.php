@@ -23,6 +23,7 @@ App::uses('UserAttribute', 'UserAttributes.Model');
  *
  * @author Shohei Nakajima <nakajimashouhei@gmail.com>
  * @package NetCommons\Users\Model
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class User extends UsersAppModel {
 
@@ -667,6 +668,40 @@ class User extends UsersAppModel {
 		Current::$current['Room'] = $currentRoom;
 
 		return $user;
+	}
+
+/**
+ * ユーザのステータスを更新する
+ *
+ * @param string|int $userId ユーザID
+ * @param string|int $status 状態値
+ * @return bool
+ * @throws InternalErrorException
+ */
+	public function updateStatus($userId, $status) {
+		try {
+			//トランザクションBegin
+			$this->begin();
+
+			$this->create(false);
+			$this->set(['id' => $userId, 'status' => $status]);
+			if (! $this->save(null, [
+				'validate' => false,
+				'callbacks' => false,
+				'fieldList' => ['status']
+			])) {
+				throw new InternalErrorException(__d('net_commons', 'Internal Server Error'));
+			};
+
+			//トランザクションCommit
+			$this->commit();
+
+		} catch (Exception $ex) {
+			//トランザクションRollback
+			$this->rollback($ex);
+		}
+
+		return true;
 	}
 
 }

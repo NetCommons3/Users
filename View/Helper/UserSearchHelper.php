@@ -14,6 +14,12 @@ App::uses('AppHelper', 'View/Helper');
 /**
  * UserSearch Helper
  *
+ * @property LinkButtonHelper $LinkButton
+ * @property NetCommonsHtmlHelper $NetCommonsHtml
+ * @property DateHelper $Date
+ * @property RoomsHelper $Rooms
+ * @property DisplayUserHelper $DisplayUser
+ *
  * @package NetCommons\Users\View\Helper
  */
 class UserSearchHelper extends AppHelper {
@@ -163,7 +169,7 @@ class UserSearchHelper extends AppHelper {
  * @return string 行のHTMLタグ
  */
 	public function userActiveClass($user) {
-		$output = '';
+		$output = ' id="Tr' . h($this->NetCommonsHtml->domId('User.id.' . $user['User']['id'])) . '"';
 
 		if (Hash::get($user, 'User.status') === UserAttributeChoice::STATUS_CODE_NONACTIVE) {
 			$output .= ' class="danger text-danger"';

@@ -91,6 +91,7 @@ class UserSearch extends UserSearchAppModel {
 			'RolesRoomsUser' => 'Rooms.RolesRoomsUser',
 			'Room' => 'Rooms.Room',
 			'RoomRole' => 'Rooms.RoomRole',
+			'UserRoleSetting' => 'UserRoles.UserRoleSetting',
 			'UsersLanguage' => 'Users.UsersLanguage',
 			'UserAttribute' => 'UserAttributes.UserAttribute',
 			'UserAttributesRole' => 'UserRoles.UserAttributesRole',
@@ -138,6 +139,7 @@ class UserSearch extends UserSearchAppModel {
 		if (isset($this->readableFields['role_key'])) {
 			$this->readableFields['role_key']['order'] = 'Role.id';
 		}
+		$this->readableFields['origin_role_key']['field'] = 'UserRoleSetting.origin_role_key';
 
 		//参加ルーム
 		$this->readableFields['room_id']['field'] = $this->Room->alias . '.id';
@@ -340,6 +342,14 @@ class UserSearch extends UserSearchAppModel {
 					$this->Role->alias . '.language_id' => Current::read('Language.id'),
 				),
 			), Hash::get($joinModels, 'Role', array())),
+			Hash::merge(array(
+				'table' => $this->UserRoleSetting->table,
+				'alias' => $this->UserRoleSetting->alias,
+				'type' => 'INNER',
+				'conditions' => array(
+					$this->alias . '.role_key' . ' = ' . $this->UserRoleSetting->alias . '.role_key'
+				),
+			), Hash::get($joinModels, 'UserRoleSetting', array())),
 			Hash::merge(array(
 				'table' => $this->RolesRoomsUser->table,
 				'alias' => $this->RolesRoomsUser->alias,
