@@ -398,19 +398,14 @@ class UserSearch extends UserSearchAppModel {
 			}
 
 			$sqlField = $this->readableFields[$field]['field'];
-			if (Hash::get($this->readableFields[$field], 'data_type') === DataType::DATA_TYPE_IMG) {
-				if ($sign) {
-					$conditions[count($conditions)]['AND'] = array(
-						$sqlField . $sign => $value,
-						'is_avatar_auto_created' => false,
-					);
-				} else {
-					$conditions[count($conditions)]['OR'] = array(
-						$sqlField . $sign => $value,
-						'is_avatar_auto_created' => true,
-					);
-				}
-
+			$dataType = $this->readableFields[$field]['data_type'] ?? null;
+			if ($dataType === DataType::DATA_TYPE_IMG) {
+				$this->__setSearchConditionsByTypeImage($conditions, $sqlField, $sign, $value);
+			} elseif ($dataType === DataType::DATA_TYPE_CHECKBOX) {
+				$userAttribute = $this->_getUserAttribute($field);
+				list($sign, $value) =
+					$this->_makeSearchConditionByChoice($userAttribute, $field, $value, null);
+				$this->__setSearchConditionsByTypeCheckbox($conditions, $sqlField, $sign, $value);
 			} elseif ($setting === self::MORE_THAN_DAYS) {
 				$conditions[count($conditions)]['OR'] = array(
 					$sqlField => null,
@@ -427,6 +422,51 @@ class UserSearch extends UserSearchAppModel {
 		$conditions['User.is_deleted'] = false;
 
 		return $conditions;
+	}
+
+/**
+ * imageタイプの条件(Conditions)を設定
+ *
+ * @param array &$conditions 条件(Conditions)リスト
+ * @param string $sqlField SQLのフィールド名
+ * @param string $sign 条件演算子
+ * @param int|string|array $value 値
+ *
+ * @return void
+ */
+	private function __setSearchConditionsByTypeImage(&$conditions, $sqlField, $sign, $value) {
+		if ($sign) {
+			$conditions[count($conditions)]['AND'] = array(
+				$sqlField . $sign => $value,
+				'is_avatar_auto_created' => false,
+			);
+		} else {
+			$conditions[count($conditions)]['OR'] = array(
+				$sqlField . $sign => $value,
+				'is_avatar_auto_created' => true,
+			);
+		}
+	}
+
+/**
+ * checkboxタイプの条件(Conditions)を設定
+ *
+ * @param array &$conditions 条件(Conditions)リスト
+ * @param string $sqlField SQLのフィールド名
+ * @param string $sign 条件演算子
+ * @param array $values 値
+ *
+ * @return void
+ */
+	private function __setSearchConditionsByTypeCheckbox(&$conditions, $sqlField, $sign, $values) {
+		if (! is_array($values)) {
+			$values = [$values];
+		}
+		foreach ($values as $value) {
+			$conditions[count($conditions)]['AND'] = array(
+				$sqlField . ' LIKE' => '%' . $value . '%'
+			);
+		}
 	}
 
 /**

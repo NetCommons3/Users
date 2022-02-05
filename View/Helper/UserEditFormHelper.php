@@ -278,13 +278,9 @@ class UserEditFormHelper extends AppHelper {
 
 		//選択肢の設定
 		if (isset($userAttribute['UserAttributeChoice'])) {
-			if ($userAttributeKey === 'role_key') {
-				$keyPath = '{n}.key';
-			} else {
-				$keyPath = '{n}.code';
-			}
-			$attributes['options'] = Hash::combine(
-				$userAttribute['UserAttributeChoice'], $keyPath, '{n}.name'
+			$attributes['options'] = $this->__makeOptions(
+				$userAttributeKey,
+				$userAttribute['UserAttributeChoice']
 			);
 			if (! $userAttribute['UserAttributeSetting']['required']) {
 				$attributes['empty'] = !(bool)$userAttribute['UserAttributeSetting']['required'];
@@ -313,6 +309,28 @@ class UserEditFormHelper extends AppHelper {
 		);
 
 		return $html;
+	}
+
+/**
+ * 選択肢オプションを生成する。
+ *
+ * @param string $attributeKey 会員項目キー
+ * @param array $choices 選択肢データ
+ * @return array
+ */
+	private function __makeOptions($attributeKey, $choices) {
+		//選択肢の設定
+		if ($attributeKey === 'role_key') {
+			$field = 'key';
+		} else {
+			$field = 'code';
+		}
+
+		$options = [];
+		foreach ($choices as $choice) {
+			$options[(string)$choice[$field]] = $choice['name'];
+		}
+		return $options;
 	}
 
 /**

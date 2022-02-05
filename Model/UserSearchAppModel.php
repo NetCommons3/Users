@@ -316,10 +316,42 @@ class UserSearchAppModel extends UsersAppModel {
 			return sprintf(Hash::get($this->readableFields, $field . '.' . 'format'), h($value));
 		} elseif (Hash::get($this->readableFields, $field . '.' . 'options')) {
 			$options = Hash::get($this->readableFields, $field . '.' . 'options', array());
-			return Hash::get($options, $value);
+			if (is_array($value)) {
+				$ret = '';
+				foreach ($value as $key) {
+					$ret .= ',' . ($options[$key] ?? '');
+				}
+				return mb_substr($ret, 1);
+			} else {
+				return $options[$value] ?? '';
+			}
+
 		} else {
 			return h($value);
 		}
+	}
+
+/**
+ * フィールド値の会員項目属性データを取得する
+ *
+ * @param array $field フィールド
+ * @return array
+ */
+	protected function _getUserAttribute($field) {
+		$attributesByLayout = $this->UserAttribute->getUserAttributesForLayout();
+
+		$userAttribute = null;
+		foreach ($attributesByLayout as $userAttributesByRow) {
+			foreach ($userAttributesByRow as $userAttributesByCol) {
+				foreach ($userAttributesByCol as $userAttributeCell) {
+					if ($userAttributeCell['UserAttribute']['key'] === $field) {
+						$userAttribute = $userAttributeCell;
+						break;
+					}
+				}
+			}
+		}
+		return $userAttribute;
 	}
 
 /**
@@ -332,12 +364,12 @@ class UserSearchAppModel extends UsersAppModel {
  * @return array array(符号, SQL値)
  */
 	protected function _creanSearchCondition($field, $setting, $value, $defaultSign = null) {
-		$userAttributes = $this->UserAttribute->getUserAttributesForLayout();
+		$userAttribute = $this->_getUserAttribute($field);
+		if (is_null($userAttribute)) {
+			return [$defaultSign, $value];
+		}
 
-		$dataType = Hash::extract(
-			$userAttributes, '{n}.{n}.{n}.UserAttributeSetting[user_attribute_key=' . $field . ']'
-		);
-		$dataTypeKey = Hash::get($dataType, '0.data_type_key', '');
+		$dataTypeKey = $userAttribute['UserAttributeSetting']['data_type_key'] ?? '';
 
 		$forwardTypes = array(
 			DataType::DATA_TYPE_TEXT, DataType::DATA_TYPE_TEXTAREA, DataType::DATA_TYPE_EMAIL
@@ -349,26 +381,14 @@ class UserSearchAppModel extends UsersAppModel {
 		);
 
 		if ($dataTypeKey === DataType::DATA_TYPE_IMG) {
-			if ($value) {
-				$sign = ' NOT';
-			} else {
-				$sign = $defaultSign;
-			}
-			$value = null;
+			list($sign, $value) =
+				$this->_makeSearchConditionByImage($value, $defaultSign);
 
 		} elseif (in_array($field, UserAttribute::$typeDatetime, true) ||
 								$dataTypeKey === DataType::DATA_TYPE_DATETIME) {
 			//日付型の場合
-			if ($setting === self::MORE_THAN_DAYS) {
-				//○日以上前(○日以上ログインしていない)
-				$sign = ' <=';
-			} else {
-				//○日以内(○日以内ログインしている)
-				$sign = ' >=';
-			}
-			$date = new DateTime(NetCommonsTime::getNowDatetime());
-			$date->sub(new DateInterval(sprintf('P%dD', (int)$value)));
-			$value = $date->format('Y-m-d H:i:s');
+			list($sign, $value) =
+				$this->_makeSearchConditionByDate($value, $setting);
 
 		} elseif (in_array($dataTypeKey, $forwardTypes, true) ||
 					in_array($field, ['created_user', 'modified_user'], true)) {
@@ -378,26 +398,81 @@ class UserSearchAppModel extends UsersAppModel {
 			$value = '%' . $value . '%';
 
 		} elseif (in_array($dataTypeKey, $optionTypes, true)) {
-			$sign = $defaultSign;
-			$userAttribute = Hash::extract(
-				$userAttributes, '{n}.{n}.{n}.UserAttribute[key=' . $field . ']'
-			);
-			$userAttrId = Hash::get($userAttribute, '0.id');
-			$options = Hash::extract(
-				$userAttributes,
-				'{n}.{n}.{n}.UserAttributeChoice.{n}[user_attribute_id=' . $userAttrId . ']'
-			);
-
-			$value = Hash::get(
-				Hash::extract($options, '{n}[key=' . $value . ']', array()),
-				'0.' . Hash::get($this->readableFields, $field . '.' . 'option_field', '')
-			);
-
+			list($sign, $value) =
+				$this->_makeSearchConditionByChoice($userAttribute, $field, $value, $defaultSign);
 		} else {
 			$sign = $defaultSign;
 		}
 
 		return array($sign, $value);
+	}
+
+/**
+ * Imageの検索条件を作成する
+ *
+ * @param array $value 値
+ * @param string $defaultSign デフォルトの符号
+ * @return array
+ */
+	protected function _makeSearchConditionByImage($value, $defaultSign) {
+		if ($value) {
+			$sign = ' NOT';
+		} else {
+			$sign = $defaultSign;
+		}
+		$value = null;
+		return [$sign, $value];
+	}
+
+/**
+ * Dateの検索条件を作成する
+ *
+ * @param array $value 値
+ * @param string $setting 日付の条件設定
+ * @return array
+ */
+	protected function _makeSearchConditionByDate($value, $setting) {
+		//日付型の場合
+		if ($setting === self::MORE_THAN_DAYS) {
+			//○日以上前(○日以上ログインしていない)
+			$sign = ' <=';
+		} else {
+			//○日以内(○日以内ログインしている)
+			$sign = ' >=';
+		}
+		$date = new DateTime(NetCommonsTime::getNowDatetime());
+		$date->sub(new DateInterval(sprintf('P%dD', (int)$value)));
+		$value = $date->format('Y-m-d H:i:s');
+		return [$sign, $value];
+	}
+
+/**
+ * 選択肢の検索条件を作成する
+ *
+ * @param array $userAttribute 会員項目データ
+ * @param array $field フィールド
+ * @param array $value 値
+ * @param string $defaultSign デフォルトの符号
+ * @return array
+ */
+	protected function _makeSearchConditionByChoice(
+		$userAttribute, $field, $value, $defaultSign
+	) {
+		$options = [];
+		$choiceFiled = $this->readableFields[$field]['option_field'] ?? 'code';
+		foreach ($userAttribute['UserAttributeChoice'] as $attributeChoice) {
+			$options[$attributeChoice['key']] = $attributeChoice[$choiceFiled];
+		}
+
+		if (is_array($value)) {
+			$retValue = [];
+			foreach ($value as $k => $v) {
+				$retValue[$k] = $options[$v] ?? $v;
+			}
+		} else {
+			$retValue = $options[$value] ?? $value;
+		}
+		return [$defaultSign, $retValue];
 	}
 
 /**
