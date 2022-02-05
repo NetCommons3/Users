@@ -321,9 +321,9 @@ class UserSearchAppModel extends UsersAppModel {
 				foreach ($value as $key) {
 					$ret .= ',' . ($options[$key] ?? '');
 				}
-				return mb_substr($ret, 1);
+				return h(mb_substr($ret, 1));
 			} else {
-				return $options[$value] ?? '';
+				return h($options[$value] ?? '');
 			}
 
 		} else {
