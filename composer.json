@@ -37,8 +37,7 @@
         "netcommons/rooms": "@dev",
         "netcommons/user-attributes": "@dev",
         "netcommons/user-manager": "@dev",
-        "netcommons/user-roles": "@dev",
-        "netcommons/users": "@dev"
+        "netcommons/user-roles": "@dev"
     },
     "config": {
         "vendor-dir": "vendors"
