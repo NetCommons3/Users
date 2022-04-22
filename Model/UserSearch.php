@@ -91,6 +91,7 @@ class UserSearch extends UserSearchAppModel {
 			'RolesRoomsUser' => 'Rooms.RolesRoomsUser',
 			'Room' => 'Rooms.Room',
 			'RoomRole' => 'Rooms.RoomRole',
+			'UserRoleSetting' => 'UserRoles.UserRoleSetting',
 			'UsersLanguage' => 'Users.UsersLanguage',
 			'UserAttribute' => 'UserAttributes.UserAttribute',
 			'UserAttributesRole' => 'UserRoles.UserAttributesRole',
@@ -138,6 +139,7 @@ class UserSearch extends UserSearchAppModel {
 		if (isset($this->readableFields['role_key'])) {
 			$this->readableFields['role_key']['order'] = 'Role.id';
 		}
+		$this->readableFields['origin_role_key']['field'] = 'UserRoleSetting.origin_role_key';
 
 		//参加ルーム
 		$this->readableFields['room_id']['field'] = $this->Room->alias . '.id';
@@ -341,6 +343,14 @@ class UserSearch extends UserSearchAppModel {
 				),
 			), Hash::get($joinModels, 'Role', array())),
 			Hash::merge(array(
+				'table' => $this->UserRoleSetting->table,
+				'alias' => $this->UserRoleSetting->alias,
+				'type' => 'INNER',
+				'conditions' => array(
+					$this->alias . '.role_key' . ' = ' . $this->UserRoleSetting->alias . '.role_key'
+				),
+			), Hash::get($joinModels, 'UserRoleSetting', array())),
+			Hash::merge(array(
 				'table' => $this->RolesRoomsUser->table,
 				'alias' => $this->RolesRoomsUser->alias,
 				'type' => $join,
@@ -388,19 +398,14 @@ class UserSearch extends UserSearchAppModel {
 			}
 
 			$sqlField = $this->readableFields[$field]['field'];
-			if (Hash::get($this->readableFields[$field], 'data_type') === DataType::DATA_TYPE_IMG) {
-				if ($sign) {
-					$conditions[count($conditions)]['AND'] = array(
-						$sqlField . $sign => $value,
-						'is_avatar_auto_created' => false,
-					);
-				} else {
-					$conditions[count($conditions)]['OR'] = array(
-						$sqlField . $sign => $value,
-						'is_avatar_auto_created' => true,
-					);
-				}
-
+			$dataType = $this->readableFields[$field]['data_type'] ?? null;
+			if ($dataType === DataType::DATA_TYPE_IMG) {
+				$this->__setSearchConditionsByTypeImage($conditions, $sqlField, $sign, $value);
+			} elseif ($dataType === DataType::DATA_TYPE_CHECKBOX) {
+				$userAttribute = $this->_getUserAttribute($field);
+				list($sign, $value) =
+					$this->_makeSearchConditionByChoice($userAttribute, $field, $value, null);
+				$this->__setSearchConditionsByTypeCheckbox($conditions, $sqlField, $sign, $value);
 			} elseif ($setting === self::MORE_THAN_DAYS) {
 				$conditions[count($conditions)]['OR'] = array(
 					$sqlField => null,
@@ -417,6 +422,51 @@ class UserSearch extends UserSearchAppModel {
 		$conditions['User.is_deleted'] = false;
 
 		return $conditions;
+	}
+
+/**
+ * imageタイプの条件(Conditions)を設定
+ *
+ * @param array &$conditions 条件(Conditions)リスト
+ * @param string $sqlField SQLのフィールド名
+ * @param string $sign 条件演算子
+ * @param int|string|array $value 値
+ *
+ * @return void
+ */
+	private function __setSearchConditionsByTypeImage(&$conditions, $sqlField, $sign, $value) {
+		if ($sign) {
+			$conditions[count($conditions)]['AND'] = array(
+				$sqlField . $sign => $value,
+				'is_avatar_auto_created' => false,
+			);
+		} else {
+			$conditions[count($conditions)]['OR'] = array(
+				$sqlField . $sign => $value,
+				'is_avatar_auto_created' => true,
+			);
+		}
+	}
+
+/**
+ * checkboxタイプの条件(Conditions)を設定
+ *
+ * @param array &$conditions 条件(Conditions)リスト
+ * @param string $sqlField SQLのフィールド名
+ * @param string $sign 条件演算子
+ * @param array $values 値
+ *
+ * @return void
+ */
+	private function __setSearchConditionsByTypeCheckbox(&$conditions, $sqlField, $sign, $values) {
+		if (! is_array($values)) {
+			$values = [$values];
+		}
+		foreach ($values as $value) {
+			$conditions[count($conditions)]['AND'] = array(
+				$sqlField . ' LIKE' => '%' . $value . '%'
+			);
+		}
 	}
 
 /**

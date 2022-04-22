@@ -14,6 +14,11 @@ App::uses('AppHelper', 'View/Helper');
 /**
  * UserSearchForm Helper
  *
+ * @property FormHelper $Form
+ * @property ButtonHelper $Button
+ * @property NetCommonsFormHelper $NetCommonsForm
+ * @property NetCommonsHtmlHelper $NetCommonsHtml
+ *
  * @package NetCommons\Users\View\Helper
  */
 class UserSearchFormHelper extends AppHelper {
@@ -24,6 +29,7 @@ class UserSearchFormHelper extends AppHelper {
  * @var array
  */
 	public $helpers = array(
+		'Form',
 		'NetCommons.Button',
 		'NetCommons.NetCommonsForm',
 		'NetCommons.NetCommonsHtml',
@@ -167,6 +173,41 @@ class UserSearchFormHelper extends AppHelper {
 	private function __inputCheckbox($dataTypeKey, $userAttribute, $options) {
 		$html = '';
 
+		$html .= '<div class="user-search-conditions-checkbox col-xs-9">';
+
+		$index = 0;
+		$inputOptions = [
+			'hiddenField' => false,
+			'type' => 'checkbox',
+			'error' => false,
+			'legend' => false,
+			'label' => false,
+			'inline' => true,
+		];
+
+		$default =
+			$this->_View->request->data['UserSearch'][$userAttribute['UserAttribute']['key']] ?? [];
+		foreach ($options as $key => $label) {
+			$domId = $this->domId($userAttribute['UserAttribute']['key'] . $index);
+
+			$inputOptions['id'] = $domId;
+			$inputOptions['value'] = $key;
+			$inputOptions['checked'] = in_array($key, $default, true);
+
+			$html .= '<div class="checkbox checkbox-inline">';
+			$html .= '<label class="control-label" for="' . $domId . '">';
+			$html .= $this->Form->checkbox(
+				$userAttribute['UserAttribute']['key'] . '[' . $index . ']',
+				$inputOptions
+			);
+			$html .= h($label);
+			$html .= '</label>';
+			$html .= '</div>';
+
+			$index++;
+		}
+
+		$html .= '</div>';
 		return $html;
 	}
 
@@ -408,7 +449,7 @@ class UserSearchFormHelper extends AppHelper {
 		$html .= $this->Button->search($label, array(
 			'type' => 'button',
 			'ng-click' => 'showUserSearch(' .
-					h(json_encode($this->_View->request->query, JSON_FORCE_OBJECT)) . ', ' .
+					h(json_encode($this->__makeQueryBySearchConditions(), JSON_FORCE_OBJECT)) . ', ' .
 					'\'' . h($this->_View->request->params['plugin']) . '\', ' .
 					'\'' . h($this->_View->request->params['controller']) . '\', ' .
 					'\'' . h($this->_View->request->params['action']) . '\', ' .
@@ -435,6 +476,25 @@ class UserSearchFormHelper extends AppHelper {
 		$html .= '</div>';
 
 		return $html;
+	}
+
+/**
+ * 検索条件画面のクエリパラメータ生成
+ *
+ * @return array
+ */
+	private function __makeQueryBySearchConditions() {
+		$query = [];
+		foreach ($this->_View->request->query as $key => $value) {
+			if (is_array($value)) {
+				foreach ($value as $k => $v) {
+					$query[$key . '[' . $k . ']'] = $v;
+				}
+			} else {
+				$query[$key] = $value;
+			}
+		}
+		return $query;
 	}
 
 }

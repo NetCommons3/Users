@@ -101,6 +101,8 @@ class ImportExportBehavior extends ModelBehavior {
 			AngularParser::parse($data);
 			$data = $this->_convSaveData($model, $data);
 
+			$model->create(false);
+			$model->validate = [];
 			$model->set($data);
 			if (! $model->validates()) {
 				//バリデーションエラーの場合
@@ -118,6 +120,8 @@ class ImportExportBehavior extends ModelBehavior {
 		}
 
 		foreach ($saveData as $i => $data) {
+			$model->create(false);
+			$model->validate = [];
 			if (! $model->saveUser($data)) {
 				//ここでバリデーションエラーになった場合、登録中に発生したエラー
 				//可能性があるのは、ファイル内での問題か、処理実行中に他プロセスで登録されたかのどちらか

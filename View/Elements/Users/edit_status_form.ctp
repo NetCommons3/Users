@@ -10,7 +10,7 @@
  */
 ?>
 
-<?php echo $this->NetCommonsForm->create('User', array(
+<?php echo $this->NetCommonsForm->create('UserStatus' . $user['User']['id'], array(
 		'type' => 'put',
 		'class' => 'form-inline',
 		'url' => NetCommonsUrl::actionUrlAsArray(array('controller' => 'user_manager', 'action' => 'status'))

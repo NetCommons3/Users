@@ -24,10 +24,12 @@ class DeleteUserBehavior extends ModelBehavior {
  *
  * @param Model $model ビヘイビア呼び出し元モデル
  * @param array $data data
+ * @param bool $execDelCommand 削除コマンドを実行するかどうか
  * @return mixed On success Model::$data, false on failure
  * @throws InternalErrorException
+ * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
  */
-	public function deleteUser(Model $model, $data) {
+	public function deleteUser(Model $model, $data, $execDelCommand = true) {
 		//トランザクションBegin
 		$model->begin();
 		$model->prepare();
@@ -43,7 +45,7 @@ class DeleteUserBehavior extends ModelBehavior {
 			//プライベートルームのデータを削除する
 			$privateRoom = $model->PrivateSpace->getPrivateRoomByUserId($data['User']['id']);
 			if (isset($privateRoom['Room']['id'])) {
-				$model->Room->deleteRoom($privateRoom);
+				$model->Room->deleteRoom($privateRoom, $execDelCommand);
 				$model->RoomDeleteRelatedTable->insertUser($data['User']['id'], $privateRoom['Room']['id']);
 			}
 
