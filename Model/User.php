@@ -303,7 +303,7 @@ class User extends UsersAppModel {
  */
 	protected function _setUsernameValidate() {
 		//ログインID
-		if (! Hash::get($this->data, 'User.id')) {
+		if ($this->__isValidateUsernameRequired()) {
 			$this->validate = ValidateMerge::merge($this->validate, array(
 				'username' => array(
 					'notBlank' => array(
@@ -332,6 +332,34 @@ class User extends UsersAppModel {
 				),
 			));
 		}
+	}
+
+/**
+ * ログインID(username)のバリデーションを行うかどうか
+ *
+ * @return bool
+ */
+	private function __isValidateUsernameRequired() {
+		if (!Hash::get($this->data, 'User.id')) {
+			// 新規登録ならば、必ずバリデーションを行う
+			return true;
+		}
+		// 更新時
+		if (!isset($this->data['User']['username'])) {
+			// ログインID(username)がPOSTされてなければバリデーション不要
+			return false;
+		}
+		$beforeUser = $this->find('first',
+			[
+				'conditions' => [
+					'id' => $this->data['User']['id']
+				],
+				'recursive' => -1,
+				'fields' => ['username']
+			]
+		);
+		// ログインID(username)が変更されてなければバリデーション不要。変更されてたらバリデーション必要
+		return $beforeUser['User']['username'] !== $this->data['User']['username'];
 	}
 
 /**
