@@ -76,7 +76,7 @@ class UsersAvatarController extends Controller {
 		];
 
 		if ($user['User']['id'] === AuthComponent::user('id')) {
-			return $this->Download->doDownloadByUploadFileId($user['UploadFile']['id'], $options);
+			return $this->Download->doDownloadByUploadFileId($user['UploadFile']['id'], $options, 'users');
 		}
 
 		$UserAttributeSetting = $this->_getSimpleModel('UserAttributeSetting');
@@ -90,7 +90,7 @@ class UsersAvatarController extends Controller {
 		ClassRegistry::removeObject('UserAttributesRole');
 
 		App::uses('UserAttribute', 'UserAttributes.Model');
-		$fieldName = sprintf(UserAttribute::PUBLIC_FIELD_FORMAT, $this->request->params['field_name']);
+		$fieldName = sprintf(UserAttribute::PUBLIC_FIELD_FORMAT, $this->request->params['field_name'], 'users');
 
 		// 以下の条件の場合、ハンドル画像を表示する(他人)
 		// * 各自で公開・非公開が設定可 && 非公開
