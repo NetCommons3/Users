@@ -76,7 +76,7 @@ class UsersAvatarController extends Controller {
 		];
 
 		if ($user['User']['id'] === AuthComponent::user('id')) {
-			return $this->Download->doDownloadByUploadFileId($user['UploadFile']['id'], $options);
+			return $this->Download->doDownloadByUploadFileId($user['UploadFile']['id'], $options, 'users');
 		}
 
 		$UserAttributeSetting = $this->_getSimpleModel('UserAttributeSetting');
@@ -104,7 +104,7 @@ class UsersAvatarController extends Controller {
 			return $this->_downloadNoImage($User, $user);
 		}
 
-		return $this->Download->doDownloadByUploadFileId($user['UploadFile']['id'], $options);
+		return $this->Download->doDownloadByUploadFileId($user['UploadFile']['id'], $options, 'users');
 	}
 
 /**
