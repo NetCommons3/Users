@@ -361,7 +361,7 @@ class UsersController extends UsersAppController {
  */
 	public function download() {
 		if (! $this->__prepare()) {
-			return $this->downloadNoImage();
+			return $this->__downloadNoImage();
 		}
 
 		$user = $this->viewVars['user'];
@@ -374,14 +374,14 @@ class UsersController extends UsersAppController {
 		);
 
 		if (! $fileSetting) {
-			return $this->downloadNoImage();
+			return $this->__downloadNoImage();
 		}
 		$userAttribute = Hash::get($this->viewVars['userAttributes'],
 			$fileSetting[0]['row'] . '.' . $fileSetting[0]['col'] . '.' . $fileSetting[0]['weight']
 		);
 
 		if (! Hash::get($user, 'UploadFile.' . $fieldName . '.field_name')) {
-			return $this->downloadNoImage();
+			return $this->__downloadNoImage();
 		}
 
 		//以下の場合、アバター表示
@@ -400,7 +400,7 @@ class UsersController extends UsersAppController {
 					! Hash::get($user, 'User.' . sprintf(UserAttribute::PUBLIC_FIELD_FORMAT, $fieldName)) ||
 				! $userAttribute['UserAttributesRole']['other_readable'] ||
 				! $userAttribute['UserAttributeSetting']['display']) {
-			return $this->downloadNoImage();
+			return $this->__downloadNoImage();
 		} else {
 			return $this->Download->doDownload($user['User']['id'],
 				array('field' => $fieldName, 'size' => $fieldSize)
@@ -413,7 +413,7 @@ class UsersController extends UsersAppController {
  *
  * @return void
  */
-	public function downloadNoImage() {
+	private function __downloadNoImage() {
 		$user = $this->viewVars['user'];
 		$fieldName = $this->params['field_name'];
 		$fieldSize = $this->params['size'];
